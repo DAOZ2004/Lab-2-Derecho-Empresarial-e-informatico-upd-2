@@ -114,7 +114,7 @@ function validateForm() {
   }
 
   if (invalid || invalidNumber || invalidServicePeriod) {
-    formError.textContent = "Revisa los datos: deben ser valores válidos y no negativos; los meses van de 0 a 11 y los días de 0 a 30.";
+    formError.textContent = "Revisa los datos: deben ser valores válidos y no negativos; los meses van de 0 a 11 y los días de 0 a 29.";
     (invalid || invalidNumber || invalidServicePeriod || monthsField).focus();
     return false;
   }
