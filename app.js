@@ -82,14 +82,19 @@ function calculate() {
   }
   statusLabel.textContent = "CÁLCULO ACTUALIZADO";
 
-  calculationNote.textContent = `Bases usadas: salario diario = salario mensual / 30; salario por hora diurna = salario diario / 8. La compensación por renuncia requiere marcar Sí, al menos 2 años y considera fracciones superiores a 6 meses. Asueto = salario diario adicional; descanso semanal = 1.5 salarios diarios. Montos brutos, sin deducciones.`;
+  calculationNote.textContent = `Bases usadas: salario diario: SBM = SBM/30.
+  Asueto: SE = SBD X 2.
+  Dia de descanso normal:  SDD = SBD x 1.5.
+  Hora Noctuna: HN = HD x 1.25.
+  Horas Extra: HE = H x HL x2.`;
 }
 
 function validateForm() {
   const requiredFields = [...form.querySelectorAll("input[required]")];
   const invalid = requiredFields.find((field) => !field.checkValidity());
-  const months = numberValue("months");
-  const extraDays = numberValue("extra-days");
+  const monthsField = form.elements.months;
+  const extraDaysField = form.elements["extra-days"];
+  const invalidServicePeriod = [monthsField, extraDaysField].find((field) => !field.checkValidity());
   const numericFields = [...form.querySelectorAll('input[type="number"]')];
   const invalidNumber = numericFields.find((field) => field.value !== "" && (!Number.isFinite(Number(field.value)) || Number(field.value) < 0));
   const cause = form.querySelector('input[name="cause"]:checked').value;
@@ -108,14 +113,27 @@ function validateForm() {
     return false;
   }
 
-  if (invalid || invalidNumber || months > 11 || extraDays > 29) {
-    formError.textContent = "Revisa los datos: deben ser valores válidos y no negativos; los meses van de 0 a 11 y los días de 0 a 29.";
-    (invalid || invalidNumber || form.elements.months).focus();
+  if (invalid || invalidNumber || invalidServicePeriod) {
+    formError.textContent = "Revisa los datos: deben ser valores válidos y no negativos; los meses van de 0 a 11 y los días de 0 a 30.";
+    (invalid || invalidNumber || invalidServicePeriod || monthsField).focus();
     return false;
   }
   formError.textContent = "";
   return true;
 }
+
+form.addEventListener("input", (event) => {
+  const field = event.target;
+  if (!field.matches('[name="months"], [name="extra-days"]') || field.value === "") return;
+
+  const value = Number(field.value);
+  const min = Number(field.min);
+  const max = Number(field.max);
+  if (!Number.isFinite(value)) return;
+
+  const normalizedValue = String(Math.min(max, Math.max(min, value)));
+  if (field.value !== normalizedValue) field.value = normalizedValue;
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -147,5 +165,9 @@ noExtras.addEventListener("change", () => {
 
 document.querySelector("#print-button").addEventListener("click", () => window.print());
 
+window.addEventListener("beforeprint", () => {
+  const workerName = document.querySelector("#worker-name").value.trim();
+  document.querySelector("#print-worker-name").textContent = workerName ? `Trabajador: ${workerName}` : "";
+});
+
 updateResignationFields();
-if (validateForm()) calculate();
